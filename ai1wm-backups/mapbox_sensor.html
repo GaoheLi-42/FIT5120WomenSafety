@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Demo: Route finding with the Directions API and Turf.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Import Mapbox GL JS -->
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- Import Mapbox GL Directions -->
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.css"
+        type="text/css" />
+
+    <!-- Import Turf & Polyline -->
+    <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-polyline/1.1.1/polyline.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .sidebar {
+            position: absolute;
+            margin: 20px 20px 30px 20px;
+            width: 25%;
+            top: 0;
+            bottom: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            overflow-y: scroll;
+            font-family: Open Sans, sans-serif;
+        }
+
+        .card {
+            display: inline-block;
+            font-size: small;
+            border-bottom: solid #d3d3d3 2px;
+            margin-bottom: 6px;
+            width: 100%;
+        }
+
+        .card-header {
+            font-weight: bold;
+            padding: 6px;
+            font-weight: bold;
+        }
+
+        .no-route {
+            background-color: #d3d3d3;
+            color: #ff0000;
+        }
+
+        .camera-found {
+            background-color: #d3d3d3;
+            color: #ffffff;
+        }
+
+        .route-found {
+            background-color: #33a532;
+            color: #ffffff;
+        }
+
+        .card-details {
+            padding: 3px 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="sidebar">
+        <h2>Safe routes</h2>
+        <div id="reports"></div>
+    </div>
+
+
+
+
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibGlnYW9oZSIsImEiOiJja2VvMThxeGowNGNzMnptd2FycGZjenJ1In0.AJNLJ5y58jHMnwbsZpCAQQ';
+        let map = new mapboxgl.Map({
+            container: 'map', // Specify the container ID
+            style: 'mapbox://styles/mapbox/light-v10', // Specify which map style to use
+            center: [144.9631, -37.8136], // Specify the starting position [lng, lat]
+            zoom: 11 // Specify the starting zoom
+        });
+
+        let directions = new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            unit: 'metric',
+            profile: 'mapbox/driving',
+            alternatives: false,
+            geometries: 'geojson',
+            controls: { instructions: true },
+            flyTo: false
+        });
+
+        map.addControl(directions, 'top-right');
+        map.scrollZoom.enable();
+
+        let sensors = { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "Point", coordinates: [144.95452750, -37.81909256] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96824660, -37.81172913] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97415050, -37.81537985] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95025600, -37.81767350] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97227590, -37.80999341] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96658910, -37.80169680] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96550670, -37.81237202] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96671450, -37.80310271] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96121060, -37.81652527] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95358080, -37.81686074] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94717510, -37.82293543] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.93970700, -37.81564989] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97305350, -37.81344861] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95956060, -37.80730067] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96049400, -37.80869542] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96521040, -37.81573423] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96506820, -37.81786445] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95449200, -37.81887962] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95644690, -37.80606888] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96879310, -37.82129924] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96440380, -37.79690473] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96220080, -37.81160331] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95866700, -37.80631581] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95906320, -37.80841814] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94710550, -37.81876473] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96411780, -37.79844525] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94292400, -37.81457987] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96549900, -37.81564190] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96429490, -37.81101523] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95102560, -37.81982992] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96308400, -37.80402400] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96656810, -37.81121849] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96558260, -37.81911704] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96715030, -37.81723437] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96685720, -37.81573742] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96778760, -37.81244703] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96608780, -37.81487988] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96156730, -37.80240719] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96153310, -37.81234775] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95652650, -37.81239679] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96386410, -37.80008565] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96787660, -37.81874249] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96721010, -37.79808191] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96194010, -37.81252157] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96516720, -37.81380667] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96508880, -37.82017828] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96515320, -37.81349440] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96609380, -37.81414074] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96309120, -37.80767455] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97169400, -37.81862929] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96134330, -37.80988941] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96216520, -37.80996494] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97454060, -37.81483252] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96291900, -37.82011242] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96689730, -37.81668633] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95604430, -37.82401776] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96689540, -37.81668188] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96863450, -37.81965808] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96675570, -37.81333081] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95792280, -37.79949544] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96995750, -37.81379749] }, },] }
+
+        let camera = turf.buffer(sensors, 0.15, { units: 'kilometers' });
+        let bbox = [0, 0, 0, 0];
+        let polygon = turf.bboxPolygon(bbox);
+
+        map.on('load', function () {
+            map.addLayer({
+                id: 'sensors',
+                type: 'fill',
+                source: {
+                    type: 'geojson',
+                    data: camera
+                },
+                layout: {},
+                paint: {
+                    'fill-color': '#339933',
+                    'fill-opacity': 0.5,
+                    'fill-outline-color': '#339933'
+                }
+            });
+
+            map.addSource('theRoute', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature'
+                }
+            });
+
+            map.addLayer({
+                id: 'theRoute',
+                type: 'line',
+                source: 'theRoute',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#FFCC00',
+                    'line-opacity': 0.5,
+                    'line-width': 13,
+                    'line-blur': 0.5
+                }
+            });
+
+            // Source and layer for the bounding box
+            map.addSource('theBox', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature'
+                }
+            });
+            map.addLayer({
+                id: 'theBox',
+                type: 'fill',
+                source: 'theBox',
+                layout: {},
+                paint: {
+                    'fill-color': '#FFC300',
+                    'fill-opacity': 0.5,
+                    'fill-outline-color': '#FFC300'
+                }
+            });
+        });
+
+        let counter = 0;
+        let maxAttempts = 10;
+        let emoji = '';
+        let collision = '';
+
+        let addCard = function (id, element, clear, detail) {
+            let card = document.createElement('div');
+            card.className = 'card';
+            // Add the response to the individual report created above
+            let heading = document.createElement('div');
+            // Set the class type based on clear value
+            if (clear == false) {
+                heading.className = 'card-header route-found';
+            } else {
+                heading.className = 'card-header camera-found';
+            }
+
+            if (id == 0) {
+                heading.innerHTML = emoji + ' The route ' + collision;
+            } else {
+                heading.innerHTML = emoji + ' Route ' + id + ' ' + collision;
+            }
+
+            let details = document.createElement('div');
+            details.className = 'card-details';
+            details.innerHTML = 'This ' + detail;
+
+            card.appendChild(heading);
+            card.appendChild(details);
+            element.insertBefore(card, element.firstChild);
+        };
+
+        let noRoutes = function (element) {
+            let card = document.createElement('div');
+            card.className = 'card';
+            // Add the response to the individual report created above
+            let heading = document.createElement('div');
+            heading.className = 'card-header no-route';
+            emoji = '🛑';
+            heading.innerHTML = emoji + ' Ending search.';
+
+            // Add details to the individual report
+            let details = document.createElement('div');
+            details.className = 'card-details';
+            details.innerHTML = 'No clear route found in ' + counter + ' tries.';
+
+            card.appendChild(heading);
+            card.appendChild(details);
+            element.insertBefore(card, element.firstChild);
+        };
+
+        directions.on('clear', function () {
+            map.setLayoutProperty('theRoute', 'visibility', 'none');
+            map.setLayoutProperty('theBox', 'visibility', 'none');
+
+            counter = 0;
+            reports.innerHTML = '';
+        });
+
+        directions.on('route', function (e) {
+            let reports = document.getElementById('reports');
+            let routes = e.route;
+
+            // Hide the route and box by setting the opacity to zero
+            map.setLayoutProperty('theRoute', 'visibility', 'none');
+            map.setLayoutProperty('theBox', 'visibility', 'none');
+
+            if (counter >= maxAttempts) {
+                noRoutes(reports);
+                counter = 0;
+            } else {
+                // Make each route visible
+                routes.forEach((e) => {
+                    // Make each route visible
+                    map.setLayoutProperty('theRoute', 'visibility', 'visible');
+                    map.setLayoutProperty('theBox', 'visibility', 'visible');
+
+                    // Get GeoJson LineString feature of route
+                    let routeLine = polyline.toGeoJSON(e.geometry);
+                    let intersects = turf.lineIntersect(camera, routeLine);
+
+                    // Create a bounding box around this route
+                    // The app will find a random point in the new bbox
+                    bbox = turf.bbox(routeLine);
+                    polygon = turf.bboxPolygon(bbox);
+
+                    // Update the data for the route
+                    // This will update the route line on the map
+                    map.getSource('theRoute').setData(routeLine);
+
+                    // Update the box
+                    map.getSource('theBox').setData(polygon);
+
+                    let clear = turf.booleanDisjoint(camera, routeLine);
+
+                    if (clear == false) {
+                        collision = 'meet a camera';
+                        detail =
+                            'takes ' + (e.duration / 60).toFixed(0) + ' minutes and meet a camera';
+                        emoji = '✔️';
+                        map.setPaintProperty('theRoute', 'line-color', '#74c476');
+                        // Hide the box
+                        map.setLayoutProperty('theBox', 'visibility', 'none');
+                        // Reset the counter
+                        counter = 0;
+                    } else {
+                        // Collision occurred, so increment the counter
+                        counter = counter + 1;
+                        // As the attempts increase, expand the search area
+                        // by a factor of the attempt count
+                        polygon = turf.transformScale(polygon, counter * 0.01);
+                        bbox = turf.bbox(polygon);
+                        collision = 'is not good. No any sensors';
+                        detail =
+                            'takes ' + (e.duration / 60).toFixed(0) + ' minutes';
+                        emoji = '👀';
+                        map.setPaintProperty('theRoute', 'line-color', '#FFCC00');
+
+                        // Add a randomly selected waypoint to get a new route from the Directions API
+                        let randomWaypoint = turf.randomPoint(1, { bbox: bbox });
+                        directions.setWaypoint(
+                            0,
+                            randomWaypoint['features'][0].geometry.coordinates
+                        );
+                    }
+                    // Add a new report section to the sidebar
+                    addCard(counter, reports, clear, detail);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
