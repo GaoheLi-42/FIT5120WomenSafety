@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Demo: Route finding with the Directions API and Turf.js</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Import Mapbox GL JS -->
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- Import Mapbox GL Directions -->
+    <script
+        src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.js"></script>
+    <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.2/mapbox-gl-directions.css"
+        type="text/css" />
+
+    <!-- Import Turf & Polyline -->
+    <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-polyline/1.1.1/polyline.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .sidebar {
+            position: absolute;
+            margin: 20px 20px 30px 20px;
+            width: 25%;
+            top: 0;
+            bottom: 0;
+            padding: 20px;
+            background-color: #ffffff;
+            overflow-y: scroll;
+            font-family: Open Sans, sans-serif;
+        }
+
+        .card {
+            display: inline-block;
+            font-size: small;
+            border-bottom: solid #d3d3d3 2px;
+            margin-bottom: 6px;
+            width: 100%;
+        }
+
+        .card-header {
+            font-weight: bold;
+            padding: 6px;
+            font-weight: bold;
+        }
+
+        .no-route {
+            background-color: #d3d3d3;
+            color: #ff0000;
+        }
+
+        .camera-found {
+            background-color: #d3d3d3;
+            color: #ffffff;
+        }
+
+        .route-found {
+            background-color: #33a532;
+            color: #ffffff;
+        }
+
+        .card-details {
+            padding: 3px 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="sidebar">
+        <h2>Safe routes</h2>
+        <div id="reports"></div>
+    </div>
+
+
+
+
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibGlnYW9oZSIsImEiOiJja2VvMThxeGowNGNzMnptd2FycGZjenJ1In0.AJNLJ5y58jHMnwbsZpCAQQ';
+        let map = new mapboxgl.Map({
+            container: 'map', // Specify the container ID
+            style: 'mapbox://styles/ligaohe/cko57ljq71xuf17pbcbd2u6sa', // Specify which map style to use
+            center: [144.9631, -37.8136], // Specify the starting position [lng, lat]
+            zoom: 13 // Specify the starting zoom
+        });
+
+        let directions = new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            unit: 'metric',
+            profile: 'mapbox/walking',
+            alternatives: false,
+            geometries: 'geojson',
+            controls: { instructions: true },
+            flyTo: false
+        });
+
+        map.addControl(directions, 'top-right');
+        map.scrollZoom.enable();
+
+        const sensors = { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "Point", coordinates: [144.95452750, -37.81909256] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96824660, -37.81172913] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97415050, -37.81537985] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95025600, -37.81767350] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97227590, -37.80999341] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96658910, -37.80169680] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96550670, -37.81237202] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96671450, -37.80310271] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96121060, -37.81652527] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95358080, -37.81686074] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94717510, -37.82293543] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.93970700, -37.81564989] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97305350, -37.81344861] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95956060, -37.80730067] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96049400, -37.80869542] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96521040, -37.81573423] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96506820, -37.81786445] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95449200, -37.81887962] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95644690, -37.80606888] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96879310, -37.82129924] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96440380, -37.79690473] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96220080, -37.81160331] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95866700, -37.80631581] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95906320, -37.80841814] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94710550, -37.81876473] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96411780, -37.79844525] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.94292400, -37.81457987] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96549900, -37.81564190] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96429490, -37.81101523] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95102560, -37.81982992] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96308400, -37.80402400] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96656810, -37.81121849] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96558260, -37.81911704] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96715030, -37.81723437] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96685720, -37.81573742] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96778760, -37.81244703] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96608780, -37.81487988] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96156730, -37.80240719] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96153310, -37.81234775] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95652650, -37.81239679] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96386410, -37.80008565] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96787660, -37.81874249] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96721010, -37.79808191] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96194010, -37.81252157] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96516720, -37.81380667] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96508880, -37.82017828] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96515320, -37.81349440] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96609380, -37.81414074] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96309120, -37.80767455] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97169400, -37.81862929] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96134330, -37.80988941] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96216520, -37.80996494] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.97454060, -37.81483252] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96291900, -37.82011242] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96689730, -37.81668633] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95604430, -37.82401776] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96689540, -37.81668188] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96863450, -37.81965808] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96675570, -37.81333081] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.95792280, -37.79949544] }, }, { type: "Feature", geometry: { type: "Point", coordinates: [144.96995750, -37.81379749] }, },] }
+		
+		const lights = {type:"FeatureCollection",features:[{type:"Feature",geometry:{type:"Point",coordinates:[144.96462297,-37.81928802]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94336507,-37.82389747]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94149432,-37.81499876]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94717543,-37.82292246]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94481452,-37.82427618]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94842002,-37.82316215]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96435016,-37.82088604]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94530626,-37.82026655]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96443327,-37.81934065]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94673011,-37.82278431]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94642383,-37.82261620]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94713943,-37.82394046]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94504966,-37.81818884]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96717051,-37.81635175]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94548659,-37.81721283]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97321352,-37.81898443]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96160090,-37.82136382]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96508807,-37.81924554]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94433194,-37.81650469]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94471609,-37.82038810]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97253627,-37.81025439]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94679208,-37.82277793]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96254370,-37.80713611]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94603198,-37.81864692]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94726895,-37.82312296]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94730586,-37.82368436]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94680015,-37.82275377]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94234836,-37.81467025]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95181008,-37.81963757]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94568635,-37.82465928]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94635032,-37.82263064]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97297749,-37.81902998]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96519270,-37.81943173]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94742811,-37.82390309]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96746287,-37.81191254]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94539967,-37.81570034]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96173903,-37.82120809]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96523798,-37.81947281]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94532750,-37.82241000]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96503349,-37.81995896]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94174703,-37.81470570]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94272408,-37.81408677]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94173097,-37.81482582]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97164309,-37.81860198]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95204308,-37.82364457]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94520850,-37.82246493]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97407401,-37.81879456]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96365369,-37.81956941]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96541500,-37.81247408]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93943869,-37.81582433]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96997027,-37.82264644]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93292203,-37.82103373]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96536869,-37.82010939]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93952364,-37.81577859]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96657520,-37.81148336]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94837937,-37.82395808]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94368349,-37.82398908]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96727109,-37.81089540]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94402133,-37.81876235]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96545121,-37.81910944]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94642882,-37.82264903]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96011361,-37.81964443]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94735886,-37.82395571]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94733085,-37.82429073]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94729780,-37.82374758]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94738108,-37.82411804]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96133402,-37.81948235]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94947440,-37.81775080]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94471686,-37.81830568]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96733010,-37.81086574]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.98000379,-37.81203148]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96251956,-37.80694009]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94732648,-37.82333312]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94740129,-37.82398784]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94333947,-37.81926981]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96749505,-37.81191572]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95935455,-37.81999827]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94555709,-37.82500244]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94532370,-37.82241626]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94140945,-37.81492987]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94719369,-37.82311534]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94720693,-37.82290438]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95374961,-37.81944463]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94891040,-37.81762334]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94513571,-37.82244966]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96544316,-37.81250268]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94839221,-37.82407843]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94342333,-37.82371455]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97371577,-37.81838887]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97437815,-37.81920394]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94375510,-37.81432879]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96987686,-37.81116240]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94749880,-37.82441270]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93981065,-37.81591287]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94099282,-37.81481796]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94408634,-37.81877892]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93999034,-37.81549889]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96388747,-37.82042957]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94746952,-37.82375745]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94183663,-37.81323818]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96948794,-37.81120160]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97404887,-37.81876609]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96163845,-37.82095596]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94442550,-37.81842696]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94169269,-37.81481767]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94052406,-37.81537615]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95038162,-37.79956518]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94721114,-37.82382775]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94506937,-37.82496241]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95188648,-37.81754002]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94721390,-37.82305193]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94540908,-37.82247514]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94753742,-37.82422845]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94608716,-37.82264936]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94495798,-37.81845110]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93962422,-37.81549889]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94090590,-37.81519061]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94151647,-37.81497513]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94093441,-37.81521931]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.98079211,-37.81049066]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93944212,-37.81582784]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94820494,-37.82386493]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95016768,-37.81755582]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94319114,-37.82377432]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96542439,-37.81246560]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94295557,-37.81463306]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93931308,-37.81589831]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94413745,-37.82199452]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96035635,-37.81975143]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96410904,-37.81000105]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94318304,-37.81425540]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94317971,-37.81887929]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94532677,-37.82248976]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94590828,-37.81820805]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97363406,-37.81829635]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96158749,-37.82104177]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97129709,-37.81807545]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94471665,-37.82495137]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96975059,-37.82310204]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96403330,-37.82034413]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94741967,-37.82399154]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97428411,-37.81909719]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94044402,-37.81522353]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97346699,-37.80981362]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.98094901,-37.81049172]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94728109,-37.82348239]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97082502,-37.82360012]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94331457,-37.82361284]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95151713,-37.82297617]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96711954,-37.81636446]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96783435,-37.81175997]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96941417,-37.81123021]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94342773,-37.81906296]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96938869,-37.81123657]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94271681,-37.81896112]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94550950,-37.82464570]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94530468,-37.82244753]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94957126,-37.81774122]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94738817,-37.82480837]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94116426,-37.81505547]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94728037,-37.82360718]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93929297,-37.81591420]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97363835,-37.81838169]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95092074,-37.81794711]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94908019,-37.81778913]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97395247,-37.81245712]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94732660,-37.82327557]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93961483,-37.81588983]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97436637,-37.81912108]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94734506,-37.82343962]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94726835,-37.82481497]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95959863,-37.81997920]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94531385,-37.81728903]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94636465,-37.82510634]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94436340,-37.81845078]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95029722,-37.81364291]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94643231,-37.82267202]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93762108,-37.81684279]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95185604,-37.82324289]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94728199,-37.82350910]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96564308,-37.81334608]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94248308,-37.81461746]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.95215338,-37.82388146]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94595218,-37.81837041]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94989649,-37.81751646]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94526968,-37.82031094]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.93964702,-37.81546499]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94878303,-37.81763580]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97011691,-37.80536554]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94730566,-37.82379866]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94073243,-37.81365780]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96326253,-37.80248018]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97306466,-37.81901515]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94344027,-37.82456555]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94610731,-37.81881892]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94824035,-37.82386795]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94472224,-37.82029241]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.96939669,-37.81132615]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.97078344,-37.82354821]},},{type:"Feature",geometry:{type:"Point",coordinates:[144.94772736,-37.82377352]},},]}
+		
+		let all = {type:"FeatureCollection",features:sensors.features.concat(lights.features)}
+        const total = turf.buffer(all, 0.15, { units: 'kilometers' });
+        let bbox = [0, 0, 0, 0];
+        let polygon = turf.bboxPolygon(bbox);
+
+        map.on('load', function () {
+			map.loadImage(
+				'https://image.flaticon.com/icons/png/128/2933/2933760.png',
+				function (error, image) {
+					if (error) throw error;
+
+					// Add the image to the map style.
+					map.addImage('camera', image);
+
+					map.addLayer({
+						id: 'sensors',
+						type: 'symbol',
+						source: {
+							type: 'geojson',
+							data: sensors
+						},
+						layout: {'icon-image':'camera','icon-size': 0.15,'icon-allow-overlap': true}
+					});
+				}
+			);
+			map.loadImage(
+				'https://image.flaticon.com/icons/png/128/1633/1633386.png',
+				function (error, image) {
+					if (error) throw error;
+
+					// Add the image to the map style.
+					map.addImage('lamp', image);
+
+					map.addLayer({
+						id: 'lamps',
+						type: 'symbol',
+						source: {
+							type: 'geojson',
+							data: lights
+						},
+						layout: {'icon-image':'lamp','icon-size': 0.15,'icon-allow-overlap': true}
+					});
+				}
+			);
+
+            map.addSource('theRoute', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature'
+                }
+            });
+
+            map.addLayer({
+                id: 'theRoute',
+                type: 'line',
+                source: 'theRoute',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#FFCC00',
+                    'line-opacity': 0.5,
+                    'line-width': 13,
+                    'line-blur': 0.5
+                }
+            });
+
+            // Source and layer for the bounding box
+            map.addSource('theBox', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature'
+                }
+            });
+            map.addLayer({
+                id: 'theBox',
+                type: 'fill',
+                source: 'theBox',
+                layout: {},
+                paint: {
+                    'fill-color': '#FFC300',
+                    'fill-opacity': 0.5,
+                    'fill-outline-color': '#FFC300'
+                }
+            });
+			const urlParams = new URLSearchParams(window.location.search);
+directions.setDestination([urlParams.get('lon'),urlParams.get('lat')]);
+        });
+
+        let counter = 0;
+        let maxAttempts = 10;
+        let emoji = '';
+        let collision = '';
+
+        let addCard = function (id, element, clear, detail) {
+            let card = document.createElement('div');
+            card.className = 'card';
+            // Add the response to the individual report created above
+            let heading = document.createElement('div');
+            // Set the class type based on clear value
+            if (clear == false) {
+                heading.className = 'card-header route-found';
+            } else {
+                heading.className = 'card-header camera-found';
+            }
+
+            if (id == 0) {
+                heading.innerHTML = emoji + ' The route ' + collision;
+            } else {
+                heading.innerHTML = emoji + ' Route ' + id + ' ' + collision;
+            }
+
+            let details = document.createElement('div');
+            details.className = 'card-details';
+            details.innerHTML = 'This ' + detail;
+
+            card.appendChild(heading);
+            card.appendChild(details);
+            element.insertBefore(card, element.firstChild);
+        };
+
+        let noRoutes = function (element) {
+            let card = document.createElement('div');
+            card.className = 'card';
+            // Add the response to the individual report created above
+            let heading = document.createElement('div');
+            heading.className = 'card-header no-route';
+            emoji = '🛑';
+            heading.innerHTML = emoji + ' Ending search.';
+
+            // Add details to the individual report
+            let details = document.createElement('div');
+            details.className = 'card-details';
+            details.innerHTML = 'No clear route found in ' + counter + ' tries.';
+
+            card.appendChild(heading);
+            card.appendChild(details);
+            element.insertBefore(card, element.firstChild);
+        };
+
+        directions.on('clear', function () {
+            map.setLayoutProperty('theRoute', 'visibility', 'none');
+            map.setLayoutProperty('theBox', 'visibility', 'none');
+
+            counter = 0;
+            reports.innerHTML = '';
+        });
+
+        directions.on('route', function (e) {
+            let reports = document.getElementById('reports');
+            let routes = e.route;
+
+            // Hide the route and box by setting the opacity to zero
+            map.setLayoutProperty('theRoute', 'visibility', 'none');
+            map.setLayoutProperty('theBox', 'visibility', 'none');
+
+            if (counter >= maxAttempts) {
+                noRoutes(reports);
+                counter = 0;
+            } else {
+                // Make each route visible
+                routes.forEach((e) => {
+                    // Make each route visible
+                    map.setLayoutProperty('theRoute', 'visibility', 'visible');
+                    map.setLayoutProperty('theBox', 'visibility', 'visible');
+
+                    // Get GeoJson LineString feature of route
+                    let routeLine = polyline.toGeoJSON(e.geometry);
+                    let intersects = turf.lineIntersect(total, routeLine);
+
+                    // Create a bounding box around this route
+                    // The app will find a random point in the new bbox
+                    bbox = turf.bbox(routeLine);
+                    polygon = turf.bboxPolygon(bbox);
+
+                    // Update the data for the route
+                    // This will update the route line on the map
+                    map.getSource('theRoute').setData(routeLine);
+
+                    // Update the box
+                    map.getSource('theBox').setData(polygon);
+
+                    let clear = turf.booleanDisjoint(total, routeLine);
+
+                    if (clear == false) {
+                        collision = 'meet a camera or light';
+                        detail =
+                            'takes ' + (e.duration / 60).toFixed(0) + ' minutes and meet a camera';
+                        emoji = '✔️';
+                        map.setPaintProperty('theRoute', 'line-color', '#74c476');
+                        // Hide the box
+                        map.setLayoutProperty('theBox', 'visibility', 'none');
+                        // Reset the counter
+                        counter = 0;
+                    } else {
+                        // Collision occurred, so increment the counter
+                        counter = counter + 1;
+                        // As the attempts increase, expand the search area
+                        // by a factor of the attempt count
+                        polygon = turf.transformScale(polygon, counter * 0.01);
+                        bbox = turf.bbox(polygon);
+                        collision = 'is not good. No any sensors';
+                        detail =
+                            'takes ' + (e.duration / 60).toFixed(0) + ' minutes';
+                        emoji = '👀';
+                        map.setPaintProperty('theRoute', 'line-color', '#FFCC00');
+
+                        // Add a randomly selected waypoint to get a new route from the Directions API
+                        let randomWaypoint = turf.randomPoint(1, { bbox: bbox });
+                        directions.setWaypoint(
+                            0,
+                            randomWaypoint['features'][0].geometry.coordinates
+                        );
+                    }
+                    // Add a new report section to the sidebar
+                    addCard(counter, reports, clear, detail);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
